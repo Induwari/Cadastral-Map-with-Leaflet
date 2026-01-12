@@ -1,0 +1,118 @@
+/* Layout */
+body { margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+#map { width: 100%; height: 100vh; }
+
+/* Bigger note popup */
+.leaflet-popup-content-wrapper { width: 520px; }
+.leaflet-popup-content { width: 500px !important; margin: 14px 16px; }
+
+.note-popup textarea{
+  width: 100%;
+  height: 200px;
+  resize: vertical;
+  box-sizing: border-box;
+  font-size: 14px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+}
+.note-popup textarea:focus { border-color: #999; }
+
+.note-actions{
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.note-actions button{
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+.note-actions button.primary{
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+/* Toast container */
+#toastRoot{
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+/* Toast */
+.toast{
+  pointer-events: auto;
+  min-width: 260px;
+  max-width: 340px;
+  background: rgba(20, 20, 20, 0.95);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast .icon{
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.14);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 16px;
+}
+.toast .content{
+  flex: 1 1 auto;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.toast .title{
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.toast .actions{
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.toast button{
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.toast .btn-undo{
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+.toast .btn-close{
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  padding: 0 6px;
+  font-size: 18px;
+  line-height: 1;
+  align-self: flex-start;
+  margin-top: 2px;
+  cursor: pointer;
+}
