@@ -1,12 +1,3 @@
-// Cadastral Notes Map (Leaflet + Leaflet.Draw)
-// Features:
-// - Cadastral overlay loaded from Eastwood.geojson (toggleable)
-// - Status indicator showing if cadastral is loaded + visible
-// - Hover highlight on parcels
-// - Parcel notes (separate localStorage) with Save/Cancel + toast Undo
-// - User drawings are persisted (separate localStorage) with notes
-// - Optional "Snap to parcel" behaviour: replace newly drawn shape with the parcel polygon under it
-
 (() => {
   // ---- Storage keys ----
   const DRAWINGS_KEY = 'leaflet_drawings_with_notes_v1'
@@ -227,58 +218,12 @@
         if (parcelNotes[pid]) {
           layer.bindTooltip('📝', { permanent: false })
         }
-
-        // click to open parcel note UI
-        layer.on('click', () => openParcelNote(layer, pid, label))
       }
     })
 
     cadastralLayer.addTo(map)
     cadastralLoaded = true
     updateStatusControl()
-  }
-
-  // ---- Parcel note UI ----
-  function openParcelNote(parcelLayer, pid, label) {
-    const placeholder = `Note for parcel ${label}...`
-    parcelLayer.bindPopup(notePopupHtml(placeholder), { maxWidth: 560, minWidth: 520, autoPan: true })
-    parcelLayer.openPopup()
-
-    parcelLayer.once('popupopen', e => {
-      const popupEl = e.popup.getElement()
-      const textarea = popupEl.querySelector('textarea')
-      const btnSave = popupEl.querySelector('.btn-save')
-      const btnCancel = popupEl.querySelector('.btn-cancel')
-
-      const previousNote = parcelNotes[pid] || ''
-      textarea.value = previousNote
-      textarea.focus()
-
-      btnCancel.onclick = () => parcelLayer.closePopup()
-
-      btnSave.onclick = () => {
-        const newNote = textarea.value.trim()
-        if (newNote) parcelNotes[pid] = newNote
-        else delete parcelNotes[pid]
-
-        saveParcelNotes()
-        parcelLayer.closePopup()
-
-        if (newNote) parcelLayer.bindTooltip('📝', { permanent: false })
-        else parcelLayer.unbindTooltip()
-
-        showToast({
-          title: 'Parcel note saved',
-          message: newNote ? 'Your parcel note was saved successfully.' : 'Removed the parcel note.',
-          onUndo: () => {
-            if (previousNote) parcelNotes[pid] = previousNote
-            else delete parcelNotes[pid]
-            saveParcelNotes()
-            showToast({ title: 'Undone', message: 'Restored the previous parcel note.' })
-          }
-        })
-      }
-    })
   }
 
   // ---- Layer control + status indicator ----
@@ -355,87 +300,6 @@
       updateStatusControl()
       showToast({ title: 'Cadastral not loaded', message: 'Could not load Eastwood.geojson.' })
     })
-
-  // ---- Snapping helpers ----
-  function layerCentroidLatLng(layer) {
-    if (layer.getLatLng) return layer.getLatLng()
-    if (layer.getBounds) return layer.getBounds().getCenter()
-    return null
-  }
-
-  function latLngToPoint(ll) {
-    return [ll.lng, ll.lat] // GeoJSON order
-  }
-
-  function bboxOfCoords(coords) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    function walk(c) {
-      if (typeof c[0] === 'number' && typeof c[1] === 'number') {
-        minX = Math.min(minX, c[0]); minY = Math.min(minY, c[1])
-        maxX = Math.max(maxX, c[0]); maxY = Math.max(maxY, c[1])
-      } else {
-        c.forEach(walk)
-      }
-    }
-    walk(coords)
-    return [minX, minY, maxX, maxY]
-  }
-
-  function pointInRing(pt, ring) {
-    // ray casting
-    const x = pt[0], y = pt[1]
-    let inside = false
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const xi = ring[i][0], yi = ring[i][1]
-      const xj = ring[j][0], yj = ring[j][1]
-      const intersect = ((yi > y) !== (yj > y)) &&
-        (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi)
-      if (intersect) inside = !inside
-    }
-    return inside
-  }
-
-  function pointInPolygon(pt, polygonCoords) {
-    // polygonCoords: [outerRing, hole1, hole2...]
-    if (!polygonCoords || !polygonCoords.length) return false
-    const outer = polygonCoords[0]
-    if (!pointInRing(pt, outer)) return false
-    for (let i = 1; i < polygonCoords.length; i++) {
-      if (pointInRing(pt, polygonCoords[i])) return false
-    }
-    return true
-  }
-
-  function pointInGeometry(pt, geom) {
-    if (!geom) return false
-    if (geom.type === 'Polygon') return pointInPolygon(pt, geom.coordinates)
-    if (geom.type === 'MultiPolygon') return geom.coordinates.some(poly => pointInPolygon(pt, poly))
-    return false
-  }
-
-  function findParcelFeatureAtLatLng(latlng) {
-    if (!cadastralLoaded || !cadastralFeatures.length) return null
-    const pt = latLngToPoint(latlng)
-
-    for (let i = 0; i < cadastralFeatures.length; i++) {
-      const f = cadastralFeatures[i]
-      const g = f.geometry
-      if (!g) continue
-
-      const bb = bboxOfCoords(g.coordinates)
-      if (pt[0] < bb[0] || pt[0] > bb[2] || pt[1] < bb[1] || pt[1] > bb[3]) continue
-
-      if (pointInGeometry(pt, g)) return f
-    }
-    return null
-  }
-
-  function featureToEditableLeafletLayer(feature) {
-    // convert a GeoJSON feature to a Leaflet layer (first geometry layer)
-    const temp = L.geoJSON(feature)
-    const layers = temp.getLayers()
-    return layers.length ? layers[0] : null
-  }
 
   // ---- Draw controls ----
   const drawControl = new L.Control.Draw({
